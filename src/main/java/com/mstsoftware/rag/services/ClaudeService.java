@@ -30,7 +30,10 @@ public class ClaudeService {
     public String chat(List<ConversationMessage> messages) {
         List<MessageParam> params = messages.stream()
                 .map(
-                        msg -> MessageParam.builder().role(MessageParam.Role.of(msg.role())).build())
+                        msg -> MessageParam.builder()
+                        .role(MessageParam.Role.of(msg.role()))
+                        .content(msg.content())
+                        .build())
                 .toList();
 
         MessageCreateParams request = MessageCreateParams.builder()
@@ -42,7 +45,7 @@ public class ClaudeService {
         Message response = client.messages().create(request);
         return response.content().stream()
                 .filter(block -> block.type().toString().equals("text"))
-                .findFirst()
+                .findFirst()                                                            
                 .map(block -> block.asText().text())
                 .orElse("");
 
