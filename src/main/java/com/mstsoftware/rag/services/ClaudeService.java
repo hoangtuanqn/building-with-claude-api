@@ -16,7 +16,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class ClaudeService {
     private final AnthropicClient client;
-    private static final String MODEL = "claude-sonnet-4-6";
+    private static final String MODEL = "claude-haiku-4-5-20251001";
     private static final Long MAX_TOKENS = 1000L;
     private static final String SYSTEM_PROMPT = "You are a patient math tutor. Do not directly answer a student's questions. Guide them to a solution step by step.";
 
