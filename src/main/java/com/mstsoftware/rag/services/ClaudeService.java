@@ -18,7 +18,8 @@ public class ClaudeService {
     private final AnthropicClient client;
     private static final String MODEL = "claude-sonnet-4-6";
     private static final Long MAX_TOKENS = 1000L;
-    private static final String SYSTEM_PROMPT = "You are a patient math tutor. Do not directly answer a student's questions. Guide them to a solution step by step.";
+    private static final String SYSTEM_PROMPT = "Bạn là một giáo viên dạy toán kiên nhẫn. Đừng trả lời trực tiếp các câu hỏi của học sinh. Hãy hướng dẫn các em tìm ra lời giải từng bước một.";
+    private static final double TEMPERATURE = 0.0;
 
     public void addUserMessage(List<ConversationMessage> messages, String text) {
         messages.add(new ConversationMessage("user", text));
@@ -42,6 +43,7 @@ public class ClaudeService {
                 .maxTokens(1000L)
                 .messages(params)
                 .system(SYSTEM_PROMPT)
+                .temperature(TEMPERATURE)
                 .build();
 
         Message response = client.messages().create(request);
