@@ -3,6 +3,7 @@ package com.mstsoftware.rag.services;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.anthropic.client.AnthropicClient;
 import com.anthropic.models.messages.Message;
@@ -29,22 +30,23 @@ public class ClaudeService {
         messages.add(new ConversationMessage("assistant", text));
     }
 
-    public String chat(List<ConversationMessage> messages) {
-        List<MessageParam> params = messages.stream()
-                .map(
-                        msg -> MessageParam.builder()
-                                .role(MessageParam.Role.of(msg.role()))
-                                .content(msg.content())
-                                .build())
-                .toList();
+    // hỏi AI dạng có ghi nhớ conversation và streaming
+    // public void chatStreming(List<ConversationMessage> messages, SseEmitter emitter) {
+    //     MessageCreateParams request = MessageCreateParams.builder()
+    //             .model(MODEL)
+    //             .maxTokens(1000L)
+    //             .messages(params)
+    //             .system(SYSTEM_PROMPT)
+    //             .temperature(TEMPERATURE)
+    //             .build();
+    // }
 
-        MessageCreateParams request = MessageCreateParams.builder()
-                .model(MODEL)
-                .maxTokens(1000L)
-                .messages(params)
-                .system(SYSTEM_PROMPT)
-                .temperature(TEMPERATURE)
-                .build();
+    
+
+    // hỏi AI dạng có ghi nhớ conversation
+    public String chat(List<ConversationMessage> messages) {
+
+        MessageCreateParams request = buildRequest(messages);
 
         Message response = client.messages().create(request);
         return response.content().stream()
@@ -55,6 +57,7 @@ public class ClaudeService {
 
     }
 
+    // hỏi AI dạng ko ghi nhớ conversation
     public Message ask(String userMessage) {
         MessageCreateParams params = MessageCreateParams.builder()
                 .model(MODEL)
@@ -64,5 +67,23 @@ public class ClaudeService {
 
         Message response = client.messages().create(params);
         return response;
+    }
+
+    private MessageCreateParams buildRequest(List<ConversationMessage> messages) {
+        List<MessageParam> params = messages.stream()
+                .map(
+                        msg -> MessageParam.builder()
+                                .role(MessageParam.Role.of(msg.role()))
+                                .content(msg.content())
+                                .build())
+                .toList();
+        return MessageCreateParams.builder()
+                .model(MODEL)
+                .maxTokens(1000L)
+                .messages(params)
+                .system(SYSTEM_PROMPT)
+                .temperature(TEMPERATURE)
+                .build();
+
     }
 }
