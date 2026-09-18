@@ -18,6 +18,7 @@ public class ClaudeService {
     private final AnthropicClient client;
     private static final String MODEL = "claude-sonnet-4-6";
     private static final Long MAX_TOKENS = 1000L;
+    private static final String SYSTEM_PROMPT = "You are a patient math tutor. Do not directly answer a student's questions. Guide them to a solution step by step.";
 
     public void addUserMessage(List<ConversationMessage> messages, String text) {
         messages.add(new ConversationMessage("user", text));
@@ -31,21 +32,22 @@ public class ClaudeService {
         List<MessageParam> params = messages.stream()
                 .map(
                         msg -> MessageParam.builder()
-                        .role(MessageParam.Role.of(msg.role()))
-                        .content(msg.content())
-                        .build())
+                                .role(MessageParam.Role.of(msg.role()))
+                                .content(msg.content())
+                                .build())
                 .toList();
 
         MessageCreateParams request = MessageCreateParams.builder()
                 .model(MODEL)
                 .maxTokens(1000L)
                 .messages(params)
+                .system(SYSTEM_PROMPT)
                 .build();
 
         Message response = client.messages().create(request);
         return response.content().stream()
                 .filter(block -> block.type().toString().equals("text"))
-                .findFirst()                                                            
+                .findFirst()
                 .map(block -> block.asText().text())
                 .orElse("");
 
