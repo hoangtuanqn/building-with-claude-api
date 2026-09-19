@@ -35,7 +35,7 @@ public class ClaudeService {
     }
 
     // hỏi AI dạng có ghi nhớ conversation và streaming
-    public void chatStreming(List<ConversationMessage> messages, SseEmitter emitter) {
+    public void chatStream(List<ConversationMessage> messages, SseEmitter emitter) {
         MessageCreateParams request = buildRequest(messages);
         MessageAccumulator accumulator = MessageAccumulator.create();
         try (StreamResponse<RawMessageStreamEvent> streamResponse = client.messages().createStreaming(request)) {
