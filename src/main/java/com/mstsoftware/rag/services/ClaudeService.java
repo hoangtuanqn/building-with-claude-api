@@ -13,6 +13,8 @@ import com.anthropic.models.messages.Message;
 import com.anthropic.models.messages.MessageCreateParams;
 import com.anthropic.models.messages.MessageParam;
 import com.anthropic.models.messages.RawMessageStreamEvent;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mstsoftware.rag.models.ConversationMessage;
 
 import lombok.AllArgsConstructor;
@@ -21,6 +23,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class ClaudeService {
     private final AnthropicClient client;
+    private final ObjectMapper objectMapper;
     private static final String MODEL = "claude-sonnet-4-6";
     private static final Long MAX_TOKENS = 1000L;
     private static final String SYSTEM_PROMPT = "Bạn là một giáo viên dạy toán kiên nhẫn. Đừng trả lời trực tiếp các câu hỏi của học sinh. Hãy hướng dẫn các em tìm ra lời giải từng bước một.";
@@ -36,7 +39,7 @@ public class ClaudeService {
 
     // hỏi AI dạng có ghi nhớ conversation và streaming
     public void chatStream(List<ConversationMessage> messages, SseEmitter emitter) {
-        MessageCreateParams request = buildRequest(messages);
+        MessageCreateParams request = buildRequest(messages).build();
         MessageAccumulator accumulator = MessageAccumulator.create();
         try (StreamResponse<RawMessageStreamEvent> streamResponse = client.messages().createStreaming(request)) {
             streamResponse.stream()
@@ -66,11 +69,14 @@ public class ClaudeService {
     }
 
     // hỏi AI dạng có ghi nhớ conversation
-    public String chat(List<ConversationMessage> messages) {
+    public String chat(List<ConversationMessage> messages, List<String> stopSequences) {
+        MessageCreateParams.Builder builder = buildRequest(messages);
 
-        MessageCreateParams request = buildRequest(messages);
+        if (stopSequences != null && !stopSequences.isEmpty()) {
+            builder.stopSequences(stopSequences);
+        }
 
-        Message response = client.messages().create(request);
+        Message response = client.messages().create(builder.build());
         return response.content().stream()
                 .filter(block -> block.type().toString().equals("text"))
                 .findFirst()
@@ -91,7 +97,15 @@ public class ClaudeService {
         return response;
     }
 
-    private MessageCreateParams buildRequest(List<ConversationMessage> messages) {
+    public JsonNode chatAsJson(List<ConversationMessage> messages) throws Exception {
+        addAssistantMessage(messages, "```json");
+        String raw = chat(messages, List.of("```"));
+
+        // Parse string thành JsonNode
+        return objectMapper.readValue(raw.trim(), JsonNode.class);
+    }
+
+    private MessageCreateParams.Builder buildRequest(List<ConversationMessage> messages) {
         List<MessageParam> params = messages.stream()
                 .map(
                         msg -> MessageParam.builder()
@@ -104,8 +118,7 @@ public class ClaudeService {
                 .maxTokens(1000L)
                 .messages(params)
                 .system(SYSTEM_PROMPT)
-                .temperature(TEMPERATURE)
-                .build();
+                .temperature(TEMPERATURE);
 
     }
 }

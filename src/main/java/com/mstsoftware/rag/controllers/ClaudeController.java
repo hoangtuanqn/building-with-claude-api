@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.anthropic.models.messages.Message;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.mstsoftware.rag.models.ConversationMessage;
 import com.mstsoftware.rag.services.ClaudeService;
 
@@ -33,7 +34,7 @@ public class ClaudeController {
     private final Map<String, List<ConversationMessage>> sessions = new ConcurrentHashMap<>();
 
     @GetMapping(value = "/chat/{sessionId}/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter   getMethodName(@PathVariable String sessionId, @RequestParam String message) {
+    public SseEmitter getMethodName(@PathVariable String sessionId, @RequestParam String message) {
         SseEmitter emitter = new SseEmitter(60_000L); // timeout 60s
         List<ConversationMessage> history = sessions.computeIfAbsent(
                 sessionId, k -> new ArrayList<>());
@@ -51,17 +52,20 @@ public class ClaudeController {
     }
 
     @PostMapping("/chat/{sessionId}")
-    public ResponseEntity<String> chat(
+    public ResponseEntity<JsonNode> chat(
             @PathVariable String sessionId,
-            @RequestBody String message) {
+            @RequestBody String message) throws Exception {
 
         List<ConversationMessage> history = sessions.computeIfAbsent(
                 sessionId,
                 k -> new ArrayList<>());
+        claudeService.addAssistantMessage(history, "```json");
         claudeService.addUserMessage(history, message);
-        String answer = claudeService.chat(history);
+        String answer = claudeService.chat(history, List.of("```"));
         claudeService.addAssistantMessage(history, answer);
-        return ResponseEntity.ok(answer);
+
+        var result = claudeService.chatAsJson(history);
+        return ResponseEntity.ok(result);
     }
 
     @DeleteMapping("/chat/{sessionId}")
