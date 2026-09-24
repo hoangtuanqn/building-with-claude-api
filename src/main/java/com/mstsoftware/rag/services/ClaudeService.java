@@ -26,7 +26,7 @@ import lombok.AllArgsConstructor;
 public class ClaudeService {
     private final AnthropicClient client;
     private final ObjectMapper objectMapper;
-    private static final String MODEL = "claude-sonnet-4-6";
+    private static final String MODEL = "claude-haiku-4-5-20251001";
     private static final Long MAX_TOKENS = 1000L;
     private static final String SYSTEM_PROMPT = "Bạn là một giáo viên dạy toán kiên nhẫn. Đừng trả lời trực tiếp các câu hỏi của học sinh. Hãy hướng dẫn các em tìm ra lời giải từng bước một.";
     private static final double TEMPERATURE = 0.0;
@@ -102,14 +102,6 @@ public class ClaudeService {
                 .map(block -> block.asText().text())
                 .collect(Collectors.joining("\n"));
         return text;
-    }
-
-    public JsonNode chatAsJson(List<ConversationMessage> messages) throws Exception {
-        addAssistantMessage(messages, "```json");
-        String raw = chat(messages, List.of("```"));
-
-        // Parse string thành JsonNode
-        return objectMapper.readValue(raw.trim(), JsonNode.class);
     }
 
     private MessageCreateParams.Builder buildRequest(List<ConversationMessage> messages) {
