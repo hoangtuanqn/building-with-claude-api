@@ -2,6 +2,7 @@ package com.mstsoftware.rag.services;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -9,6 +10,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import com.anthropic.client.AnthropicClient;
 import com.anthropic.core.http.StreamResponse;
 import com.anthropic.helpers.MessageAccumulator;
+import com.anthropic.models.messages.ContentBlock;
 import com.anthropic.models.messages.Message;
 import com.anthropic.models.messages.MessageCreateParams;
 import com.anthropic.models.messages.MessageParam;
@@ -86,7 +88,7 @@ public class ClaudeService {
     }
 
     // hỏi AI dạng ko ghi nhớ conversation
-    public Message ask(String userMessage) {
+    public String ask(String userMessage) {
         MessageCreateParams params = MessageCreateParams.builder()
                 .model(MODEL)
                 .maxTokens(MAX_TOKENS)
@@ -94,7 +96,12 @@ public class ClaudeService {
                 .build();
 
         Message response = client.messages().create(params);
-        return response;
+
+        String text = response.content().stream()
+                .filter(ContentBlock::isText)
+                .map(block -> block.asText().text())
+                .collect(Collectors.joining("\n"));
+        return text;
     }
 
     public JsonNode chatAsJson(List<ConversationMessage> messages) throws Exception {
