@@ -52,20 +52,22 @@ public class ClaudeController {
     }
 
     @PostMapping("/chat/{sessionId}")
-    public ResponseEntity<JsonNode> chat(
+    public ResponseEntity<String> chat(
             @PathVariable String sessionId,
             @RequestBody String message) throws Exception {
 
         List<ConversationMessage> history = sessions.computeIfAbsent(
                 sessionId,
                 k -> new ArrayList<>());
-        claudeService.addAssistantMessage(history, "```json");
         claudeService.addUserMessage(history, message);
+        claudeService.addAssistantMessage(history, "```json");
         String answer = claudeService.chat(history, List.of("```"));
-        claudeService.addAssistantMessage(history, answer);
 
-        var result = claudeService.chatAsJson(history);
-        return ResponseEntity.ok(result);
+        history.remove(history.size() - 1);
+        claudeService.addAssistantMessage(history, "```json\n" + answer + "\n```");
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(answer);
     }
 
     @DeleteMapping("/chat/{sessionId}")
