@@ -75,9 +75,9 @@ public class ClaudeController {
     }
 
     @PostMapping("/ask")
-    public ResponseEntity<?> postMethodName(@RequestBody String message) {
-        Message response = claudeService.ask(message);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<?> ask(@RequestBody String message) {
+        String response = claudeService.ask(message);
+        return ResponseEntity.ok(Map.of("content", response));
     }
 
 }
